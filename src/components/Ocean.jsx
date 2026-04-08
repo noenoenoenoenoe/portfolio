@@ -29,14 +29,14 @@ export default function Ocean() {
       const z = pos.getY(i) // Y in plane space = Z in world
 
       const height =
-        Math.sin(x * 0.12 + t * 0.7) * 0.25 +
-        Math.sin(z * 0.1 + t * 0.5) * 0.18 +
-        Math.sin((x + z) * 0.08 + t * 0.4) * 0.12
+        Math.sin(x * 0.12 + t * 0.7) * 0.15 +
+        Math.sin(z * 0.1 + t * 0.5) * 0.1 +
+        Math.sin((x + z) * 0.08 + t * 0.4) * 0.08
 
       pos.setZ(i, height)
 
       // Color based on height
-      const factor = (height + 0.55) / 1.1 // normalize to 0-1
+      const factor = (height + 0.33) / 0.66 // normalize to 0-1
       const color = factor > 0.5
         ? mid.clone().lerp(shallow, (factor - 0.5) * 2)
         : deep.clone().lerp(mid, factor * 2)

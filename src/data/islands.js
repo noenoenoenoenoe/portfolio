@@ -1,9 +1,5 @@
-// 6 islands in a circle, radius 14, docks facing center
-const R = 14
-const circlePos = (i, total) => {
-  const angle = (i / total) * Math.PI * 2
-  return [R * Math.sin(angle), 0, R * Math.cos(angle)]
-}
+// Islands scattered in an organic S-shaped / archipelago layout
+// Min ~14 units between centers to avoid overlap (island ~5 + dock ~5 + margin)
 
 export const islands = [
   {
@@ -13,7 +9,8 @@ export const islands = [
     techStack: ['JavaScript', 'React'],
     github: 'https://github.com/noenoenoenoenoe',
     demo: null,
-    position: circlePos(0, 6),
+    position: [-18, 0, -14],
+    dockAngle: 1.2,
     color: '#5b9bd5',
     skills: ['javascript', 'teamwork'],
   },
@@ -24,7 +21,8 @@ export const islands = [
     techStack: ['Python', 'BeautifulSoup', 'Requests'],
     github: 'https://github.com/noenoenoenoenoe',
     demo: null,
-    position: circlePos(1, 6),
+    position: [-3, 0, -8],
+    dockAngle: -0.5,
     color: '#e8a87c',
     skills: ['python', 'scraping'],
   },
@@ -35,7 +33,8 @@ export const islands = [
     techStack: ['Python', 'AI'],
     github: 'https://github.com/noenoenoenoenoe',
     demo: null,
-    position: circlePos(2, 6),
+    position: [14, 0, -16],
+    dockAngle: 2.8,
     color: '#b5a8d0',
     skills: ['python', 'ai'],
   },
@@ -46,7 +45,8 @@ export const islands = [
     techStack: ['Python', 'LangChain', 'RAG'],
     github: 'https://github.com/noenoenoenoenoe',
     demo: null,
-    position: circlePos(3, 6),
+    position: [20, 0, 2],
+    dockAngle: -2.0,
     color: '#85c7a2',
     skills: ['python', 'ai', 'rag'],
   },
@@ -57,7 +57,8 @@ export const islands = [
     techStack: ['???'],
     github: null,
     demo: null,
-    position: circlePos(4, 6),
+    position: [5, 0, 12],
+    dockAngle: -1.0,
     color: '#d4c07a',
     skills: ['secret'],
   },
@@ -68,11 +69,15 @@ export const islands = [
     techStack: ['JavaScript', 'Automation'],
     github: 'https://github.com/noenoenoenoenoe',
     demo: null,
-    position: circlePos(5, 6),
+    position: [-12, 0, 16],
+    dockAngle: 0.6,
     color: '#7eb8c9',
     skills: ['javascript', 'automation'],
   },
 ]
+
+// Exclusion radius around each island (island body + dock + safety margin)
+export const ISLAND_RADIUS = 6
 
 export const skills = [
   { id: 'python', name: 'Python', icon: '🐍' },

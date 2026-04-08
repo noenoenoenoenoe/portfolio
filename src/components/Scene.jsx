@@ -1,13 +1,17 @@
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Sky, Cloud } from '@react-three/drei'
+import { OrbitControls, Cloud } from '@react-three/drei'
+import { useStore } from '../store'
 import Ark from './Ark'
 import Ocean from './Ocean'
 import IslandCluster from './IslandCluster'
 import Seagulls from './Seagulls'
 
 export default function Scene() {
+  const setLoaded = useStore((s) => s.setLoaded)
+
   return (
     <Canvas
+      onCreated={() => setTimeout(() => setLoaded(true), 800)}
       orthographic
       camera={{
         position: [10, 10, 10],

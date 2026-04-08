@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Text, Outlines } from '@react-three/drei'
+import { Text, Outlines, Billboard } from '@react-three/drei'
 import * as THREE from 'three'
 import { createNoise2D, createNoise3D } from 'simplex-noise'
 import { useStore } from '../store'
@@ -205,28 +205,40 @@ function Dock({ position = [0, 0, 0] }) {
 function WoodenSign({ name, position = [0, 0, 0] }) {
   const gradientMap = useToonGradient()
   return (
-    <group position={position}>
-      <mesh position={[0, 0.7, 0]} castShadow>
-        <cylinderGeometry args={[0.06, 0.07, 1.4, 6]} />
-        <meshToonMaterial color="#5C3D1E" gradientMap={gradientMap} />
+    <group position={position} rotation={[0, 0, 0.06]}>
+      {/* Two posts */}
+      <mesh position={[-1.1, 0.8, 0]} castShadow>
+        <cylinderGeometry args={[0.06, 0.07, 1.8, 6]} />
+        <meshToonMaterial color="#4a2a10" gradientMap={gradientMap} />
         <Outlines thickness={0.015} color="#2a1505" />
       </mesh>
-      <mesh position={[0, 1.35, 0.03]} castShadow>
-        <boxGeometry args={[2.2, 0.7, 0.06]} />
-        <meshToonMaterial color="#6B3A1F" gradientMap={gradientMap} />
+      <mesh position={[1.1, 0.75, 0]} castShadow>
+        <cylinderGeometry args={[0.06, 0.07, 1.7, 6]} />
+        <meshToonMaterial color="#4a2a10" gradientMap={gradientMap} />
         <Outlines thickness={0.015} color="#2a1505" />
       </mesh>
-      <mesh position={[0, 1.35, 0.06]}>
-        <boxGeometry args={[2.0, 0.55, 0.05]} />
-        <meshToonMaterial color="#d4a050" gradientMap={gradientMap} />
+      {/* Main plank — dark background */}
+      <mesh position={[0, 1.6, 0.03]} castShadow>
+        <boxGeometry args={[2.8, 0.85, 0.07]} />
+        <meshToonMaterial color="#5a3015" gradientMap={gradientMap} />
+        <Outlines thickness={0.02} color="#1a0a05" />
       </mesh>
+      {/* Inner plank — lighter */}
+      <mesh position={[0, 1.6, 0.07]}>
+        <boxGeometry args={[2.5, 0.65, 0.04]} />
+        <meshToonMaterial color="#c89040" gradientMap={gradientMap} />
+      </mesh>
+      {/* Text — fixed on the plank, centered */}
       <Text
-        position={[0, 1.35, 0.1]}
-        fontSize={0.22}
-        color="#2a1505"
+        position={[0, 1.62, 0.1]}
+        fontSize={0.26}
+        color="#fff8e8"
         anchorX="center"
         anchorY="middle"
-        maxWidth={1.8}
+        maxWidth={2.1}
+        textAlign="center"
+        outlineWidth={0.02}
+        outlineColor="#3a2010"
       >
         {name}
       </Text>
@@ -243,11 +255,14 @@ export default function Island({ data, index = 0 }) {
 
   const islandGeo = useIslandGeometry(index + 1)
 
-  const dockRotation = Math.atan2(-data.position[0], -data.position[2])
-  const dist = Math.sqrt(data.position[0] ** 2 + data.position[2] ** 2)
-  const dirX = -data.position[0] / dist
-  const dirZ = -data.position[2] / dist
-  const dockEnd = [data.position[0] + dirX * 5, 0, data.position[2] + dirZ * 5]
+  // Use explicit dockAngle from data
+  const dockRotation = data.dockAngle || 0
+  // Dock end point: 5 units out from island center in dock direction
+  const dockEnd = [
+    data.position[0] + Math.sin(dockRotation) * 5,
+    0,
+    data.position[2] + Math.cos(dockRotation) * 5,
+  ]
 
   const handleClick = (e) => {
     e.stopPropagation()

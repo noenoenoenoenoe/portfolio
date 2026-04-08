@@ -310,7 +310,6 @@ export default function Ark() {
       onComplete: () => {
         setArkMoving(false)
         playBell()
-        // Confetti burst on arrival
         confetti({
           particleCount: 60,
           spread: 70,
@@ -319,6 +318,7 @@ export default function Ark() {
         })
       },
     })
+
     tl.to(groupRef.current.rotation, { y: targetRotY, duration: 0.4, ease: 'power2.inOut' })
     tl.to(groupRef.current.position, {
       x: tx, z: tz,
