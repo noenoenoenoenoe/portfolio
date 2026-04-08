@@ -1,8 +1,9 @@
 # Portfolio
 
-Structure de base creee avec les fichiers suivants a la racine :
+Structure de base avec une organisation plus propre :
 
-- `CSS`
-- `JS`
 - `Index.html`
 - `README.MD`
+- `css/style.css`
+- `js/main.js`
+- `assets/`
