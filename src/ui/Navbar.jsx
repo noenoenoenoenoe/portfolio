@@ -1,5 +1,17 @@
 import { useStore } from '../store'
 
+const navLinkStyle = {
+  padding: '8px 16px',
+  background: 'rgba(255,255,255,0.15)',
+  backdropFilter: 'blur(6px)',
+  color: 'white',
+  borderRadius: '20px',
+  fontSize: '13px',
+  fontWeight: 600,
+  fontFamily: 'Inter, sans-serif',
+  textDecoration: 'none',
+}
+
 export default function Navbar() {
   const setSelectedIsland = useStore((s) => s.setSelectedIsland)
   const setPanelOpen = useStore((s) => s.setPanelOpen)
@@ -45,33 +57,21 @@ export default function Navbar() {
           href="https://github.com/noenoenoenoenoe"
           target="_blank"
           rel="noopener noreferrer"
-          style={{
-            padding: '8px 16px',
-            background: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(6px)',
-            color: 'white',
-            borderRadius: '20px',
-            fontSize: '13px',
-            fontWeight: 600,
-            fontFamily: 'Inter, sans-serif',
-            textDecoration: 'none',
-          }}
+          style={navLinkStyle}
         >
           GitHub
         </a>
         <a
+          href="https://www.linkedin.com/in/escoffiervincentnoe/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={navLinkStyle}
+        >
+          LinkedIn
+        </a>
+        <a
           href="mailto:noe.vincent8@gmail.com"
-          style={{
-            padding: '8px 16px',
-            background: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(6px)',
-            color: 'white',
-            borderRadius: '20px',
-            fontSize: '13px',
-            fontWeight: 600,
-            fontFamily: 'Inter, sans-serif',
-            textDecoration: 'none',
-          }}
+          style={navLinkStyle}
         >
           Contact
         </a>

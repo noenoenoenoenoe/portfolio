@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
 import { skills as allSkills } from '../data/islands'
 
@@ -6,6 +6,19 @@ const keyframes = `
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(15px); }
   to { opacity: 1; transform: translateY(0); }
+}
+.info-panel-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.info-panel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.info-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(180, 130, 60, 0.3);
+  border-radius: 4px;
+}
+.info-panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(180, 130, 60, 0.5);
 }
 `
 
@@ -25,6 +38,7 @@ export default function InfoPanel() {
   const setPanelOpen = useStore((s) => s.setPanelOpen)
   const setSelectedIsland = useStore((s) => s.setSelectedIsland)
   const [key, setKey] = useState(0)
+  const panelRef = useRef(null)
 
   // Re-trigger animations when island changes
   useEffect(() => {
@@ -36,6 +50,37 @@ export default function InfoPanel() {
     setSelectedIsland(null)
   }
 
+  // Close on click outside and on Escape key
+  useEffect(() => {
+    if (!panelOpen) return
+
+    const handleClickOutside = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setPanelOpen(false)
+        setSelectedIsland(null)
+      }
+    }
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setPanelOpen(false)
+        setSelectedIsland(null)
+      }
+    }
+
+    // Delay attachment to avoid catching the same click that opened the panel
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+    }, 0)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [panelOpen, setPanelOpen, setSelectedIsland])
+
   // Get skill details for this island
   const islandSkills = selectedIsland
     ? selectedIsland.skills
@@ -46,7 +91,7 @@ export default function InfoPanel() {
   return (
     <>
       <style>{keyframes}</style>
-      <div style={{
+      <div ref={panelRef} className="info-panel-scroll" style={{
         position: 'absolute',
         right: 0,
         top: 0,
@@ -64,6 +109,8 @@ export default function InfoPanel() {
         fontFamily: 'Inter, sans-serif',
         borderLeft: '3px solid rgba(180, 130, 60, 0.4)',
         boxShadow: '-10px 0 40px rgba(0,0,0,0.3)',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
       }}>
         {selectedIsland && (
           <div key={key}>
@@ -158,6 +205,7 @@ export default function InfoPanel() {
                   lineHeight: 1.8,
                   fontSize: '14px',
                   margin: 0,
+                  whiteSpace: 'pre-line',
                 }}>
                   {selectedIsland.description}
                 </p>
@@ -210,6 +258,22 @@ export default function InfoPanel() {
                 display: 'flex',
                 gap: '10px',
               }}>
+                {selectedIsland.confidential && !selectedIsland.github && !selectedIsland.demo && (
+                  <div style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '10px',
+                    textAlign: 'center',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#a89878',
+                    letterSpacing: '0.3px',
+                  }}>
+                    {selectedIsland.confidentialLabel || '🔒 Projet pro — code confidentiel'}
+                  </div>
+                )}
                 {selectedIsland.github && (
                   <a
                     href={selectedIsland.github}
@@ -251,7 +315,7 @@ export default function InfoPanel() {
                       textDecoration: 'none',
                     }}
                   >
-                    Demo Live
+                    {selectedIsland.demoLabel || 'Demo Live'}
                   </a>
                 )}
               </div>

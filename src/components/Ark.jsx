@@ -5,7 +5,8 @@ import * as THREE from 'three'
 import gsap from 'gsap'
 import confetti from 'canvas-confetti'
 import { useStore } from '../store'
-import { playSplash, playCreak, playBell } from '../sounds'
+import { captainData } from '../data/islands'
+import { playSplash, playCreak, playBell, playWave } from '../sounds'
 
 function useToonGradient() {
   return useMemo(() => {
@@ -292,6 +293,14 @@ export default function Ark() {
   const groupRef = useRef()
   const arkTarget = useStore((s) => s.arkTarget)
   const setArkMoving = useStore((s) => s.setArkMoving)
+  const setSelectedIsland = useStore((s) => s.setSelectedIsland)
+  const setPanelOpen = useStore((s) => s.setPanelOpen)
+
+  const handleCaptainClick = (e) => {
+    e.stopPropagation()
+    setSelectedIsland(captainData)
+    setPanelOpen(true)
+  }
 
   useEffect(() => {
     if (!groupRef.current) return
@@ -336,13 +345,19 @@ export default function Ark() {
 
   return (
     <group ref={groupRef}>
-      <Hull />
-      <Deck />
-      <Walls />
-      <Cabin />
-      <Roof />
-      <Animals />
-      <Flag />
+      <group
+        onClick={handleCaptainClick}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; playWave() }}
+        onPointerOut={() => { document.body.style.cursor = 'default' }}
+      >
+        <Hull />
+        <Deck />
+        <Walls />
+        <Cabin />
+        <Roof />
+        <Animals />
+        <Flag />
+      </group>
     </group>
   )
 }
