@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Cloud } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { useStore } from '../store'
 import Ark from './Ark'
 import Ocean from './Ocean'
@@ -7,6 +7,7 @@ import IslandCluster from './IslandCluster'
 import Seagulls from './Seagulls'
 import SeaLife from './SeaLife'
 import SkyDome from './SkyDome'
+import CartoonClouds from './CartoonClouds'
 
 export default function Scene() {
   const setLoaded = useStore((s) => s.setLoaded)
@@ -40,12 +41,7 @@ export default function Scene() {
         args={['#ffe8c0', '#a0d8a0', 0.4]}
       />
 
-      {/* Fluffy rounded clouds */}
-      <Cloud position={[-16, 10, -12]} speed={0.15} opacity={0.7} width={10} depth={3} segments={12} />
-      <Cloud position={[14, 12, 10]} speed={0.1} opacity={0.6} width={12} depth={3} segments={14} />
-      <Cloud position={[0, 11, -18]} speed={0.18} opacity={0.65} width={8} depth={3} segments={10} />
-      <Cloud position={[-8, 13, 15]} speed={0.12} opacity={0.5} width={9} depth={2.5} segments={11} />
-      <Cloud position={[20, 11, -5]} speed={0.08} opacity={0.55} width={11} depth={3} segments={13} />
+      <CartoonClouds />
 
       <Ark />
       <Ocean />
