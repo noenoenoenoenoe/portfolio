@@ -1,13 +1,18 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Outlines } from '@react-three/drei'
+import { useTheme } from '../store'
 
 function Toon({ color, children, outline = true, outlineColor = '#333', outlineWidth = 0.008, ...props }) {
+  const theme = useTheme()
+  const toon = theme.useToonShading
+  const ol = theme.outlineThickness
+  const showOutline = outline && ol > 0 && outlineColor !== 'none'
   return (
     <mesh {...props}>
       {children}
-      <meshToonMaterial color={color} />
-      {outline && <Outlines thickness={outlineWidth} color={outlineColor} />}
+      {toon ? <meshToonMaterial color={color} /> : <meshStandardMaterial color={color} roughness={0.8} />}
+      {showOutline && <Outlines thickness={outlineWidth * ol} color={outlineColor} />}
     </mesh>
   )
 }
@@ -325,6 +330,12 @@ function Squirrel({ position }) {
 const animalComponents = [Fox, Penguin, Owl, Hedgehog, Raccoon, Deer, Squirrel]
 
 export default function IslandAnimal({ index = 0, position = [0, 0, 0] }) {
+  const theme = useTheme()
+  const animalScale = theme.geometry?.animal?.scale || 1.0
   const Animal = animalComponents[index % animalComponents.length]
-  return <Animal position={position} />
+  return (
+    <group scale={animalScale}>
+      <Animal position={position} />
+    </group>
+  )
 }

@@ -9,6 +9,7 @@ export function createWoodMaterial({
   grainDir = 0,
   plankScale = 3.0,
   toonLighting = true,
+  toonSteps = 3,
 } = {}) {
   const axes = [
     { along: 'z', cross1: 'x', cross2: 'y' },
@@ -124,16 +125,23 @@ export function createWoodMaterial({
         woodColor *= 1.0 + (hash(vec2(plankId, 7.0)) * 0.12 - 0.06);
 
         // === Lighting ===
-        ${toonLighting ? `
         float NdotL = dot(vWorldNormal, normalize(vec3(8.0, 14.0, 5.0)));
+        ${toonLighting && toonSteps === 3 ? `
+        // Pokemon: 3-step toon
         float toon;
         if (NdotL > 0.65) toon = 1.0;
         else if (NdotL > 0.3) toon = 0.8;
         else if (NdotL > 0.0) toon = 0.62;
         else toon = 0.48;
         vec3 finalColor = woodColor * (toon * 0.7 + 0.3);
+        ` : toonLighting && toonSteps === 2 ? `
+        // Ghibli: hard 2-step
+        float toon = NdotL > 0.2 ? 1.0 : 0.55;
+        vec3 finalColor = woodColor * (toon * 0.65 + 0.35);
         ` : `
-        vec3 finalColor = woodColor;
+        // Realistic diffuse
+        float diffuse = max(NdotL, 0.0) * 0.65 + 0.35;
+        vec3 finalColor = woodColor * diffuse;
         `}
 
         gl_FragColor = vec4(finalColor, 1.0);

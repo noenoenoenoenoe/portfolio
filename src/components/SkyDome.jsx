@@ -1,21 +1,24 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
+import { useTheme } from '../store'
 
 export default function SkyDome() {
+  const theme = useTheme()
+  const { zenith: zenithHex, mid: midHex, horizon: horizonHex } = theme.sky
+
   const { geometry, material } = useMemo(() => {
     const geo = new THREE.SphereGeometry(120, 32, 20)
     const colors = []
     const pos = geo.attributes.position
 
-    // Pastel gradient: warm peach horizon → soft blue zenith
-    const zenith = new THREE.Color('#7ec8e3')   // soft sky blue
-    const mid = new THREE.Color('#b8e4f0')      // light pastel blue
-    const horizon = new THREE.Color('#ffe5c4')   // warm peach
+    const zenith = new THREE.Color(zenithHex)
+    const mid = new THREE.Color(midHex)
+    const horizon = new THREE.Color(horizonHex)
     const tmp = new THREE.Color()
 
     for (let i = 0; i < pos.count; i++) {
       const y = pos.getY(i)
-      const t = (y / 120 + 1) * 0.5 // 0 at bottom, 1 at top
+      const t = (y / 120 + 1) * 0.5
 
       if (t < 0.35) {
         tmp.copy(horizon).lerp(mid, t / 0.35)
@@ -34,7 +37,7 @@ export default function SkyDome() {
     })
 
     return { geometry: geo, material: mat }
-  }, [])
+  }, [zenithHex, midHex, horizonHex])
 
   return <mesh geometry={geometry} material={material} />
 }

@@ -2,6 +2,7 @@ import Scene from './components/Scene'
 import Navbar from './ui/Navbar'
 import InfoPanel from './ui/InfoPanel'
 import LoadingScreen from './ui/LoadingScreen'
+import ThemeSwitcher from './ui/ThemeSwitcher'
 import './index.css'
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
       <Navbar />
       <InfoPanel />
       <LoadingScreen />
+      <ThemeSwitcher />
     </div>
   )
 }

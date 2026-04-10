@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { getTheme, THEME_IDS } from './themes'
 
 export const useStore = create((set) => ({
   // Currently selected island (null = none)
@@ -20,4 +21,14 @@ export const useStore = create((set) => ({
   // Info panel open
   panelOpen: false,
   setPanelOpen: (open) => set({ panelOpen: open }),
+
+  // Theme
+  themeId: THEME_IDS.POKEMON,
+  setThemeId: (id) => set({ themeId: id }),
 }))
+
+// Convenience hook — returns the full theme object
+export function useTheme() {
+  const themeId = useStore((s) => s.themeId)
+  return getTheme(themeId)
+}

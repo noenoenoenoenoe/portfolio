@@ -1,38 +1,44 @@
 import { useState, useMemo } from 'react'
-import { Text, Outlines, Billboard } from '@react-three/drei'
+import { Text, Outlines } from '@react-three/drei'
 import * as THREE from 'three'
 import { createNoise2D, createNoise3D } from 'simplex-noise'
-import { useStore } from '../store'
+import { useStore, useTheme } from '../store'
 import { playWave } from '../sounds'
 import { createIslandMaterial } from '../shaders/island'
 import { createWoodMaterial } from '../shaders/wood'
 import IslandAnimal from './IslandAnimals'
 
 function useToonGradient() {
+  const toonSteps = useTheme().toonSteps
   return useMemo(() => {
-    const colors = new Uint8Array([80, 160, 230])
+    // 2-step (Ghibli): hard shadow/lit edge. 3-step (Pokemon): bright/mid/shadow
+    const colors = toonSteps === 2
+      ? new Uint8Array([100, 230])           // hard 2-step: shadow | lit
+      : new Uint8Array([80, 160, 230])       // soft 3-step: shadow | mid | lit
     const tex = new THREE.DataTexture(colors, colors.length, 1, THREE.RedFormat)
     tex.minFilter = THREE.NearestFilter
     tex.magFilter = THREE.NearestFilter
     tex.needsUpdate = true
     return tex
-  }, [])
+  }, [toonSteps])
 }
 
-// Rounder, softer island geometry — Animal Crossing style
-// scale affects radius and height for varied island sizes
-function useIslandGeometry(seed = 0, scale = 1.0) {
+// Island geometry — shaped by theme
+function useIslandGeometry(seed = 0, scale = 1.0, islandColors, geoConfig) {
   return useMemo(() => {
     const noise2D = createNoise2D(() => seed * 0.1 + 0.5)
     const noise3D = createNoise3D(() => seed * 0.2 + 0.3)
 
-    // Vary shape based on seed — some elongated, some round
+    const hScale = geoConfig?.heightScale || 1.0
+    const topFlat = geoConfig?.topFlatness || 0.12
+    const cliffRough = geoConfig?.cliffRoughness || 0.06
+
     const shapeVar = (seed % 3) / 3
     const baseRadius = 2.2 * scale
     const bottomRadius = 2.6 * scale
-    const h = 0.8 * (0.8 + scale * 0.3) // taller islands for bigger scale
+    const h = 0.8 * (0.8 + scale * 0.3) * hScale
 
-    const geo = new THREE.CylinderGeometry(baseRadius, bottomRadius, h, 36, 6)
+    const geo = new THREE.CylinderGeometry(baseRadius, bottomRadius, h, 42, Math.max(6, Math.round(6 * hScale)))
     const pos = geo.attributes.position
     const v = new THREE.Vector3()
     const height = h
@@ -43,38 +49,34 @@ function useIslandGeometry(seed = 0, scale = 1.0) {
       const r = Math.sqrt(v.x * v.x + v.z * v.z)
       const normalizedY = (v.y + height / 2) / height
 
-      // Gentler coastline — rounder, less jagged
-      // Vary coastline shape: elongate some islands based on seed
       const elongation = 1 + shapeVar * 0.3 * Math.cos(angle * 2 + seed)
       const coastNoise = noise2D(Math.cos(angle) * 1.5, Math.sin(angle) * 1.5) * 0.25 * elongation
       const radialDisplace = coastNoise * (r / bottomRadius)
       pos.setX(i, v.x + Math.cos(angle) * radialDisplace)
       pos.setZ(i, v.z + Math.sin(angle) * radialDisplace)
 
-      // Smooth cliff sides (less rocky)
       if (normalizedY < 0.7 && r > 1.2) {
-        const rockNoise = noise3D(v.x * 3, v.y * 4, v.z * 3) * 0.06
+        const rockNoise = noise3D(v.x * 3, v.y * 4, v.z * 3) * cliffRough
         pos.setX(i, pos.getX(i) + Math.cos(angle) * rockNoise)
         pos.setZ(i, pos.getZ(i) + Math.sin(angle) * rockNoise)
       }
 
-      // Soft rolling hills on top
       if (normalizedY > 0.8) {
-        const terrainNoise = noise2D(v.x * 2 + seed, v.z * 2) * 0.12
+        const terrainNoise = noise2D(v.x * 2 + seed, v.z * 2) * topFlat
         pos.setY(i, v.y + terrainNoise)
       }
     }
 
-    // Bright, cheerful vertex colors
+    const ic = islandColors
     const colors = new Float32Array(pos.count * 3)
     const color = new THREE.Color()
-    const grass1 = new THREE.Color('#66d962')     // bright lime green
-    const grass2 = new THREE.Color('#4abb46')     // rich green
-    const grass3 = new THREE.Color('#7ee87a')     // light spring green
-    const sand = new THREE.Color('#f5e6c8')       // warm cream sand
-    const cliff1 = new THREE.Color('#c4a882')     // warm tan cliff
-    const cliff2 = new THREE.Color('#a08868')     // darker tan
-    const underwater = new THREE.Color('#8fb8a0')  // seafoam green (underwater portion)
+    const grass1 = new THREE.Color(ic.grass[0])
+    const grass2 = new THREE.Color(ic.grass[1])
+    const grass3 = new THREE.Color(ic.grass[2])
+    const sand = new THREE.Color(ic.sand)
+    const cliff1 = new THREE.Color(ic.cliff[0])
+    const cliff2 = new THREE.Color(ic.cliff[1])
+    const underwater = new THREE.Color(ic.underwater)
 
     for (let i = 0; i < pos.count; i++) {
       const y = pos.getY(i)
@@ -82,25 +84,20 @@ function useIslandGeometry(seed = 0, scale = 1.0) {
       const z = pos.getZ(i)
 
       if (y > 0.2) {
-        // Top: lush grass with 3 shades for variation
         const variation = noise2D(x * 4, z * 4)
         const variation2 = noise2D(x * 8 + 10, z * 8 + 10)
         if (variation > 0.3) color.copy(grass3)
         else if (variation > -0.2) color.copy(grass1)
         else color.copy(grass2)
-        // Slight yellow tint in sunny patches
-        if (variation2 > 0.5) color.lerp(new THREE.Color('#b8e86e'), 0.3)
+        if (variation2 > 0.5) color.lerp(new THREE.Color(ic.grassSunny), 0.3)
       } else if (y > 0.0) {
-        // Beach: warm creamy sand
         color.copy(sand)
         const sandVar = noise2D(x * 6, z * 6)
-        if (sandVar > 0.3) color.lerp(new THREE.Color('#eed9b0'), 0.5)
+        if (sandVar > 0.3) color.lerp(new THREE.Color(ic.sandVariant), 0.5)
       } else if (y > -0.2) {
-        // Cliff face
         const rockVar = noise3D(x * 3, y * 3, z * 3)
         color.copy(rockVar > 0 ? cliff1 : cliff2)
       } else {
-        // Below water line
         color.copy(underwater)
       }
 
@@ -113,141 +110,176 @@ function useIslandGeometry(seed = 0, scale = 1.0) {
     pos.needsUpdate = true
     geo.computeVertexNormals()
     return geo
-  }, [seed, scale])
+  }, [seed, scale, islandColors, geoConfig])
 }
 
-// Shore rocks — rounder, more colorful
+// Shore rocks
 function ShoreRocks({ seed = 0, scale = 1.0 }) {
+  const theme = useTheme()
   const gradientMap = useToonGradient()
+  const toon = theme.useToonShading
+  const rockColors = theme.rocks.colors
+  const rg = theme.geometry.rocks
   const rocks = useMemo(() => {
     const noise = createNoise2D(() => seed * 0.3 + 0.7)
-    const rockColors = ['#b0a898', '#a8b0a0', '#c0b8a8', '#98a090']
-    const count = Math.round(8 * scale)
+    const count = Math.round((rg?.count || 8) * scale)
+    const sMin = rg?.sizeMin || 0.05
+    const sMax = rg?.sizeMax || 0.13
     return Array.from({ length: count }, (_, i) => {
       const angle = (i / count) * Math.PI * 2 + noise(i, 0) * 0.5
       const r = (2.5 + noise(i, 1) * 0.3) * scale
       return {
         position: [Math.cos(angle) * r, -0.25, Math.sin(angle) * r],
-        scale: 0.05 + Math.abs(noise(i, 2)) * 0.08,
+        scale: sMin + Math.abs(noise(i, 2)) * (sMax - sMin),
         rotation: [noise(i, 3), noise(i, 4), noise(i, 5)],
         color: rockColors[i % rockColors.length],
       }
     })
-  }, [seed, scale])
+  }, [seed, scale, rockColors, rg])
 
   return rocks.map((rock, i) => (
     <mesh key={i} position={rock.position} rotation={rock.rotation} scale={rock.scale} castShadow>
-      <dodecahedronGeometry args={[1, 1]} />
-      <meshToonMaterial color={rock.color} gradientMap={gradientMap} />
+      <dodecahedronGeometry args={[1, rg?.detail || 1]} />
+      {toon
+        ? <meshToonMaterial color={rock.color} gradientMap={gradientMap} />
+        : <meshStandardMaterial color={rock.color} roughness={0.8} />
+      }
     </mesh>
   ))
 }
 
-// Round cartoon tree (Animal Crossing style)
+// Tree — shape driven by theme geometry
 function RoundTree({ position = [0, 0, 0], scale = 1, variant = 0 }) {
+  const theme = useTheme()
   const gradientMap = useToonGradient()
-  const foliageColors = ['#4dbd4a', '#5cc85a', '#3da83a', '#68d466']
-  const trunkColor = '#8B6840'
-  const mainColor = foliageColors[variant % foliageColors.length]
-  const darkColor = foliageColors[(variant + 2) % foliageColors.length]
+  const t = theme.trees
+  const g = theme.geometry.tree
+  const toon = theme.useToonShading
+  const ol = theme.outlineThickness
+  const foliageColors = t.foliage
 
   return (
     <group position={position} scale={scale}>
       {/* Trunk */}
-      <mesh position={[0, 0.35, 0]} castShadow>
-        <cylinderGeometry args={[0.05, 0.08, 0.6, 6]} />
-        <meshToonMaterial color={trunkColor} gradientMap={gradientMap} />
-        <Outlines thickness={0.012} color="#5a3a20" />
+      <mesh position={[0, g.trunkHeight * 0.58, 0]} castShadow>
+        <cylinderGeometry args={[g.trunkTopR, g.trunkBottomR, g.trunkHeight, 6]} />
+        {toon ? <meshToonMaterial color={t.trunk} gradientMap={gradientMap} /> : <meshStandardMaterial color={t.trunk} roughness={0.8} />}
+        {ol > 0 && t.trunkOutline !== 'none' && <Outlines thickness={0.012 * ol} color={t.trunkOutline} />}
       </mesh>
-      {/* Main foliage ball */}
-      <mesh position={[0, 0.8, 0]} castShadow>
-        <sphereGeometry args={[0.4, 10, 8]} />
-        <meshToonMaterial color={mainColor} gradientMap={gradientMap} />
-        <Outlines thickness={0.015} color="#2a6628" />
-      </mesh>
-      {/* Secondary foliage bumps */}
-      <mesh position={[0.2, 0.95, 0.1]} castShadow>
-        <sphereGeometry args={[0.22, 8, 6]} />
-        <meshToonMaterial color={darkColor} gradientMap={gradientMap} />
-      </mesh>
-      <mesh position={[-0.15, 0.9, -0.12]} castShadow>
-        <sphereGeometry args={[0.18, 8, 6]} />
-        <meshToonMaterial color={mainColor} gradientMap={gradientMap} />
-      </mesh>
-    </group>
-  )
-}
-
-// Palm tree — brighter, more tropical
-function PalmTree({ position = [0, 0, 0], scale = 1 }) {
-  const gradientMap = useToonGradient()
-  return (
-    <group position={position} scale={scale}>
-      <mesh position={[0, 0.5, 0]} castShadow>
-        <cylinderGeometry args={[0.04, 0.07, 1.2, 6]} />
-        <meshToonMaterial color="#a07830" gradientMap={gradientMap} />
-        <Outlines thickness={0.012} color="#5a4020" />
-      </mesh>
-      {/* Coconuts */}
-      <mesh position={[0.06, 0.95, 0.06]}>
-        <sphereGeometry args={[0.04, 6, 6]} />
-        <meshToonMaterial color="#6a5030" gradientMap={gradientMap} />
-      </mesh>
-      <mesh position={[-0.05, 0.93, -0.04]}>
-        <sphereGeometry args={[0.035, 6, 6]} />
-        <meshToonMaterial color="#6a5030" gradientMap={gradientMap} />
-      </mesh>
-      {/* Leaves — brighter green */}
-      {[0, 1.05, 2.1, 3.15, 4.2, 5.25].map((angle, i) => (
-        <mesh
-          key={i}
-          position={[Math.sin(angle) * 0.25, 1.05, Math.cos(angle) * 0.25]}
-          rotation={[Math.sin(angle) * 0.7, angle, Math.cos(angle) * 0.3]}
-          castShadow
-        >
-          <boxGeometry args={[0.08, 0.025, 0.55]} />
-          <meshToonMaterial color="#48c858" gradientMap={gradientMap} />
+      {/* Foliage — data-driven balls */}
+      {g.foliageBalls.map((ball, i) => (
+        <mesh key={i} position={ball.offset} castShadow>
+          <sphereGeometry args={[ball.radius, 10, 8]} />
+          {toon
+            ? <meshToonMaterial color={foliageColors[(variant + i) % foliageColors.length]} gradientMap={gradientMap} />
+            : <meshStandardMaterial color={foliageColors[(variant + i) % foliageColors.length]} roughness={0.8} />
+          }
+          {i === 0 && ol > 0 && t.foliageOutline !== 'none' && <Outlines thickness={0.015 * ol} color={t.foliageOutline} />}
         </mesh>
       ))}
     </group>
   )
 }
 
-// Flowers — small colorful clusters
-function FlowerPatch({ position, seed = 0 }) {
+// Palm / olive tree — shape driven by theme
+function PalmTree({ position = [0, 0, 0], scale = 1 }) {
+  const theme = useTheme()
   const gradientMap = useToonGradient()
+  const t = theme.trees
+  const g = theme.geometry.palm
+  const toon = theme.useToonShading
+  const ol = theme.outlineThickness
+  const isOlive = g.type === 'olive'
+
+  return (
+    <group position={position} scale={scale}>
+      {/* Trunk — optionally curved/gnarled */}
+      <group rotation={g.trunkCurve > 0 ? [g.trunkCurve * 0.3, 0, g.trunkCurve * 0.2] : [0, 0, 0]}>
+        <mesh position={[0, g.trunkHeight * 0.42, 0]} castShadow>
+          <cylinderGeometry args={[g.trunkTopR, g.trunkBottomR, g.trunkHeight, 6]} />
+          {toon ? <meshToonMaterial color={t.palmTrunk} gradientMap={gradientMap} /> : <meshStandardMaterial color={t.palmTrunk} roughness={0.8} />}
+          {ol > 0 && t.palmTrunkOutline !== 'none' && <Outlines thickness={0.012 * ol} color={t.palmTrunkOutline} />}
+        </mesh>
+      </group>
+
+      {/* Olive mode: wide flat canopy */}
+      {isOlive && g.canopyBalls && g.canopyBalls.map((ball, i) => (
+        <mesh key={`c${i}`} position={ball.offset} castShadow>
+          <sphereGeometry args={[ball.radius, 10, 8]} />
+          {toon
+            ? <meshToonMaterial color={t.foliage[i % t.foliage.length]} gradientMap={gradientMap} />
+            : <meshStandardMaterial color={t.foliage[i % t.foliage.length]} roughness={0.8} />
+          }
+        </mesh>
+      ))}
+
+      {/* Palm mode: coconuts + fronds */}
+      {!isOlive && g.hasCoconuts && <>
+        <mesh position={[0.06, g.trunkHeight * 0.79, 0.06]}>
+          <sphereGeometry args={[0.04, 6, 6]} />
+          {toon ? <meshToonMaterial color={t.coconut} gradientMap={gradientMap} /> : <meshStandardMaterial color={t.coconut} roughness={0.8} />}
+        </mesh>
+        <mesh position={[-0.05, g.trunkHeight * 0.77, -0.04]}>
+          <sphereGeometry args={[0.035, 6, 6]} />
+          {toon ? <meshToonMaterial color={t.coconut} gradientMap={gradientMap} /> : <meshStandardMaterial color={t.coconut} roughness={0.8} />}
+        </mesh>
+      </>}
+
+      {!isOlive && g.leafCount > 0 && Array.from({ length: g.leafCount }, (_, i) => {
+        const angle = (i / g.leafCount) * Math.PI * 2
+        return (
+          <mesh
+            key={i}
+            position={[Math.sin(angle) * 0.25, g.trunkHeight * 0.88, Math.cos(angle) * 0.25]}
+            rotation={[Math.sin(angle) * g.leafDroop, angle, Math.cos(angle) * 0.3]}
+            castShadow
+          >
+            <boxGeometry args={[0.08, 0.025, g.leafLength]} />
+            {toon ? <meshToonMaterial color={t.palmLeaves} gradientMap={gradientMap} /> : <meshStandardMaterial color={t.palmLeaves} roughness={0.8} />}
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+// Flowers
+function FlowerPatch({ position, seed = 0 }) {
+  const theme = useTheme()
+  const gradientMap = useToonGradient()
+  const f = theme.flowers
+  const toon = theme.useToonShading
   const flowers = useMemo(() => {
     const noise = createNoise2D(() => seed * 0.4 + 0.2)
-    const petalColors = ['#ff8fa0', '#ffb347', '#fff06a', '#a8d8ff', '#dda0dd', '#ff6b8a', '#87e897']
     return Array.from({ length: 5 }, (_, i) => {
       const angle = (i / 5) * Math.PI * 2 + noise(i, 0) * 0.8
       const r = 0.1 + Math.abs(noise(i, 1)) * 0.15
       return {
         pos: [Math.cos(angle) * r, 0.02, Math.sin(angle) * r],
-        color: petalColors[Math.floor(Math.abs(noise(i, 2)) * petalColors.length) % petalColors.length],
+        color: f.petals[Math.floor(Math.abs(noise(i, 2)) * f.petals.length) % f.petals.length],
         scale: 0.03 + Math.abs(noise(i, 3)) * 0.02,
       }
     })
-  }, [seed])
+  }, [seed, f.petals])
 
   return (
     <group position={position}>
-      {flowers.map((f, i) => (
-        <group key={i} position={f.pos}>
-          {/* Petals — flat discs */}
+      {flowers.map((fl, i) => (
+        <group key={i} position={fl.pos}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[f.scale, 6]} />
-            <meshToonMaterial color={f.color} gradientMap={gradientMap} side={THREE.DoubleSide} />
+            <circleGeometry args={[fl.scale, 6]} />
+            {toon
+              ? <meshToonMaterial color={fl.color} gradientMap={gradientMap} side={THREE.DoubleSide} />
+              : <meshStandardMaterial color={fl.color} roughness={0.8} side={THREE.DoubleSide} />
+            }
           </mesh>
-          {/* Center dot */}
           <mesh position={[0, 0.005, 0]}>
-            <sphereGeometry args={[f.scale * 0.4, 6, 4]} />
-            <meshToonMaterial color="#fff8a0" gradientMap={gradientMap} />
+            <sphereGeometry args={[fl.scale * 0.4, 6, 4]} />
+            {toon ? <meshToonMaterial color={f.center} gradientMap={gradientMap} /> : <meshStandardMaterial color={f.center} roughness={0.8} />}
           </mesh>
-          {/* Stem */}
           <mesh position={[0, -0.04, 0]}>
             <cylinderGeometry args={[0.003, 0.003, 0.08, 4]} />
-            <meshToonMaterial color="#5aaa40" gradientMap={gradientMap} />
+            {toon ? <meshToonMaterial color={f.stem} gradientMap={gradientMap} /> : <meshStandardMaterial color={f.stem} roughness={0.8} />}
           </mesh>
         </group>
       ))}
@@ -255,99 +287,106 @@ function FlowerPatch({ position, seed = 0 }) {
   )
 }
 
-// Bushes — rounder, cuter
+// Bushes — data-driven from theme geometry
 function Bush({ position }) {
+  const theme = useTheme()
   const gradientMap = useToonGradient()
+  const b = theme.bushes
+  const balls = theme.geometry.bush.balls
+  const toon = theme.useToonShading
+  const ol = theme.outlineThickness
+  const colors = [b.main, ...(b.secondary || [])]
   return (
     <group position={position}>
-      {/* Main bush sphere */}
-      <mesh position={[0, 0.1, 0]} castShadow>
-        <sphereGeometry args={[0.18, 8, 6]} />
-        <meshToonMaterial color="#4cc050" gradientMap={gradientMap} />
-        <Outlines thickness={0.01} color="#2a7030" />
-      </mesh>
-      {/* Secondary bumps */}
-      <mesh position={[0.12, 0.14, 0.06]} castShadow>
-        <sphereGeometry args={[0.12, 8, 6]} />
-        <meshToonMaterial color="#5ad060" gradientMap={gradientMap} />
-      </mesh>
-      <mesh position={[-0.1, 0.12, -0.05]} castShadow>
-        <sphereGeometry args={[0.1, 8, 6]} />
-        <meshToonMaterial color="#42b848" gradientMap={gradientMap} />
-      </mesh>
+      {balls.map((ball, i) => (
+        <mesh key={i} position={ball.offset} castShadow>
+          <sphereGeometry args={[ball.radius, 8, 6]} />
+          {toon
+            ? <meshToonMaterial color={colors[i % colors.length]} gradientMap={gradientMap} />
+            : <meshStandardMaterial color={colors[i % colors.length]} roughness={0.8} />
+          }
+          {i === 0 && ol > 0 && b.outline !== 'none' && <Outlines thickness={0.01 * ol} color={b.outline} />}
+        </mesh>
+      ))}
     </group>
   )
 }
 
-// Dock — warmer, friendlier colors
+// Dock
 function Dock({ position = [0, 0, 0] }) {
+  const theme = useTheme()
   const gradientMap = useToonGradient()
+  const d = theme.dock
+  const toon = theme.useToonShading
+  const ol = theme.outlineThickness
   return (
     <group position={position}>
       <mesh position={[0, -0.15, 0]} castShadow>
         <boxGeometry args={[0.8, 0.06, 2.5]} />
-        <meshToonMaterial color="#c8a060" gradientMap={gradientMap} />
-        <Outlines thickness={0.012} color="#7a5830" />
+        {toon ? <meshToonMaterial color={d.platform} gradientMap={gradientMap} /> : <meshStandardMaterial color={d.platform} roughness={0.8} />}
+        {ol > 0 && d.platformOutline !== 'none' && <Outlines thickness={0.012 * ol} color={d.platformOutline} />}
       </mesh>
       {[-0.8, 0, 0.8].map((z, i) => (
         <group key={i}>
           <mesh position={[-0.35, -0.35, z]} castShadow>
             <cylinderGeometry args={[0.04, 0.04, 0.5, 6]} />
-            <meshToonMaterial color="#8a6838" gradientMap={gradientMap} />
+            {toon ? <meshToonMaterial color={d.supports} gradientMap={gradientMap} /> : <meshStandardMaterial color={d.supports} roughness={0.8} />}
           </mesh>
           <mesh position={[0.35, -0.35, z]} castShadow>
             <cylinderGeometry args={[0.04, 0.04, 0.5, 6]} />
-            <meshToonMaterial color="#8a6838" gradientMap={gradientMap} />
+            {toon ? <meshToonMaterial color={d.supports} gradientMap={gradientMap} /> : <meshStandardMaterial color={d.supports} roughness={0.8} />}
           </mesh>
         </group>
       ))}
-      {/* Mooring post */}
       <mesh position={[0, 0.0, 1.2]} castShadow>
         <cylinderGeometry args={[0.06, 0.08, 0.25, 6]} />
-        <meshToonMaterial color="#8a6838" gradientMap={gradientMap} />
-        <Outlines thickness={0.012} color="#5a3a18" />
+        {toon ? <meshToonMaterial color={d.mooringPost} gradientMap={gradientMap} /> : <meshStandardMaterial color={d.mooringPost} roughness={0.8} />}
+        {ol > 0 && d.mooringOutline !== 'none' && <Outlines thickness={0.012 * ol} color={d.mooringOutline} />}
       </mesh>
     </group>
   )
 }
 
-// Wooden sign — rustic plank with hand-painted black text
+// Wooden sign
 function WoodenSign({ name, position = [0, 0, 0] }) {
+  const theme = useTheme()
+  const s = theme.sign
+  const toon = theme.useToonShading
+  const ol = theme.outlineThickness
   const woodMat = useMemo(() => createWoodMaterial({
-    baseColor: '#c0a070',
-    darkColor: '#8a6840',
-    lightColor: '#d8be90',
+    baseColor: s.plankBase,
+    darkColor: s.plankDark,
+    lightColor: s.plankLight,
     grainDir: 1,
     plankScale: 2.5,
-  }), [])
+    toonLighting: toon,
+    toonSteps: theme.toonSteps,
+  }), [s.plankBase, s.plankDark, s.plankLight, toon, theme.toonSteps])
 
   return (
     <group position={position} rotation={[0, 0, 0.04]}>
-      {/* Single sturdy post */}
       <mesh position={[0, 0.7, 0]} castShadow>
         <cylinderGeometry args={[0.07, 0.09, 1.6, 6]} />
-        <meshToonMaterial color="#7a5830" />
-        <Outlines thickness={0.012} color="#3a2010" />
+        {toon ? <meshToonMaterial color={s.post} /> : <meshStandardMaterial color={s.post} roughness={0.8} />}
+        {ol > 0 && s.postOutline !== 'none' && <Outlines thickness={0.012 * ol} color={s.postOutline} />}
       </mesh>
 
-      {/* Plank — raw wood with grain shader */}
       <mesh position={[0, 1.55, 0.03]} material={woodMat} castShadow>
         <boxGeometry args={[2.6, 0.7, 0.07, 4, 4, 1]} />
-        <Outlines thickness={0.015} color="#4a2a10" />
+        {ol > 0 && s.plankOutline !== 'none' && <Outlines thickness={0.015 * ol} color={s.plankOutline} />}
       </mesh>
 
-      {/* Text — black paint on wood, hand-painted look */}
       <Text
         position={[0, 1.57, 0.08]}
         fontSize={0.24}
-        font="/fonts/PermanentMarker-Regular.ttf"
-        color="#1a1008"
+        font={`${import.meta.env.BASE_URL}fonts/PermanentMarker-Regular.ttf`}
+        color={s.textColor}
         anchorX="center"
         anchorY="middle"
         maxWidth={2.2}
         textAlign="center"
         outlineWidth={0.008}
-        outlineColor="#3a2818"
+        outlineColor={s.textOutline}
       >
         {name}
       </Text>
@@ -360,18 +399,21 @@ export default function Island({ data, index = 0 }) {
   const setSelectedIsland = useStore((s) => s.setSelectedIsland)
   const setArkTarget = useStore((s) => s.setArkTarget)
   const setPanelOpen = useStore((s) => s.setPanelOpen)
-  const gradientMap = useToonGradient()
+  const theme = useTheme()
+  const ol = theme.outlineThickness
 
   const s = data.scale || 1.0
-  const islandGeo = useIslandGeometry(index + 1, s)
-  const islandMat = useMemo(() => createIslandMaterial(), [])
+  const islandGeo = useIslandGeometry(index + 1, s, theme.island, theme.geometry.island)
+  const islandMat = useMemo(
+    () => createIslandMaterial({ toonSteps: theme.toonSteps }),
+    [theme.toonSteps]
+  )
 
   const dockRotation = data.dockAngle || 0
-  // Dock starts at island edge (radius ~2.2*s) and extends 2.5 units outward
   const islandEdge = 2.2 * s
   const dockLength = 2.5
-  const dockCenter = islandEdge + dockLength / 2  // center of the dock plank
-  const dockFarEnd = islandEdge + dockLength + 1.5 // where the ark stops
+  const dockCenter = islandEdge + dockLength / 2
+  const dockFarEnd = islandEdge + dockLength + 1.5
   const dockEnd = [
     data.position[0] + Math.sin(dockRotation) * dockFarEnd,
     0,
@@ -385,7 +427,6 @@ export default function Island({ data, index = 0 }) {
     setPanelOpen(true)
   }
 
-  // Extra vegetation for bigger islands
   const extraTrees = s >= 1.3
   const extraFlowers = s >= 1.0
 
@@ -397,28 +438,24 @@ export default function Island({ data, index = 0 }) {
         onPointerOut={() => { setHovered(false); document.body.style.cursor = 'default' }}
       >
         <mesh geometry={islandGeo} position={[0, -0.1, 0]} material={islandMat} castShadow receiveShadow>
-          <Outlines thickness={0.02} color="#2a5a2a" />
+          {ol > 0 && theme.island.outlineColor !== 'none' && <Outlines thickness={0.02 * ol} color={theme.island.outlineColor} />}
         </mesh>
       </group>
 
-      {/* Mixed vegetation — scaled to island size */}
       <RoundTree position={[0.7 * s, 0.2, 0.4 * s]} scale={0.9 * s} variant={index} />
       <RoundTree position={[-0.8 * s, 0.15, -0.3 * s]} scale={0.7 * s} variant={index + 1} />
       <PalmTree position={[0.2 * s, 0.18, -0.7 * s]} scale={0.8 * s} />
 
-      {/* Extra trees for big islands */}
       {extraTrees && <>
         <RoundTree position={[-0.3 * s, 0.2, 1.0 * s]} scale={0.85 * s} variant={index + 2} />
         <PalmTree position={[1.1 * s, 0.15, -0.1 * s]} scale={0.7 * s} />
         <RoundTree position={[-1.2 * s, 0.18, 0.5 * s]} scale={0.6 * s} variant={index + 3} />
       </>}
 
-      {/* Bushes */}
       <Bush position={[-0.3 * s, 0.15, 0.7 * s]} />
       <Bush position={[0.6 * s, 0.15, -0.15 * s]} />
       <Bush position={[-0.7 * s, 0.12, 0.2 * s]} />
 
-      {/* Flower patches */}
       <FlowerPatch position={[0.4 * s, 0.25, 0.8 * s]} seed={index * 3} />
       <FlowerPatch position={[-0.5 * s, 0.22, -0.6 * s]} seed={index * 3 + 1} />
       {extraFlowers && <>
@@ -426,13 +463,9 @@ export default function Island({ data, index = 0 }) {
         <FlowerPatch position={[-0.9 * s, 0.22, 0.5 * s]} seed={index * 3 + 3} />
       </>}
 
-      {/* Island animal */}
       <IslandAnimal index={index} position={[0.9 * s, 0.28, 0.1 * s]} />
-
-      {/* Shore rocks */}
       <ShoreRocks seed={index + 1} scale={s} />
 
-      {/* Dock + sign — positioned relative to island size */}
       <Dock position={[0, 0.1, dockCenter]} />
       <WoodenSign name={data.name} position={[0, 0.05, -1.0 * s]} />
     </group>
