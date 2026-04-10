@@ -5,6 +5,7 @@ import { createNoise2D, createNoise3D } from 'simplex-noise'
 import { useStore } from '../store'
 import { playWave } from '../sounds'
 import { createIslandMaterial } from '../shaders/island'
+import { createWoodMaterial } from '../shaders/wood'
 import IslandAnimal from './IslandAnimals'
 
 function useToonGradient() {
@@ -310,44 +311,43 @@ function Dock({ position = [0, 0, 0] }) {
   )
 }
 
-// Wooden sign — rounder, more colorful
+// Wooden sign — rustic plank with hand-painted black text
 function WoodenSign({ name, position = [0, 0, 0] }) {
-  const gradientMap = useToonGradient()
+  const woodMat = useMemo(() => createWoodMaterial({
+    baseColor: '#c0a070',
+    darkColor: '#8a6840',
+    lightColor: '#d8be90',
+    grainDir: 1,
+    plankScale: 2.5,
+  }), [])
+
   return (
     <group position={position} rotation={[0, 0, 0.04]}>
-      {/* Two posts */}
-      <mesh position={[-1.1, 0.8, 0]} castShadow>
-        <cylinderGeometry args={[0.06, 0.07, 1.8, 6]} />
-        <meshToonMaterial color="#6a4420" gradientMap={gradientMap} />
+      {/* Single sturdy post */}
+      <mesh position={[0, 0.7, 0]} castShadow>
+        <cylinderGeometry args={[0.07, 0.09, 1.6, 6]} />
+        <meshToonMaterial color="#7a5830" />
         <Outlines thickness={0.012} color="#3a2010" />
       </mesh>
-      <mesh position={[1.1, 0.75, 0]} castShadow>
-        <cylinderGeometry args={[0.06, 0.07, 1.7, 6]} />
-        <meshToonMaterial color="#6a4420" gradientMap={gradientMap} />
-        <Outlines thickness={0.012} color="#3a2010" />
+
+      {/* Plank — raw wood with grain shader */}
+      <mesh position={[0, 1.55, 0.03]} material={woodMat} castShadow>
+        <boxGeometry args={[2.6, 0.7, 0.07, 4, 4, 1]} />
+        <Outlines thickness={0.015} color="#4a2a10" />
       </mesh>
-      {/* Main plank — rounded look */}
-      <mesh position={[0, 1.6, 0.03]} castShadow>
-        <boxGeometry args={[2.8, 0.85, 0.08]} />
-        <meshToonMaterial color="#7a4a20" gradientMap={gradientMap} />
-        <Outlines thickness={0.018} color="#3a1a08" />
-      </mesh>
-      {/* Inner plank — warm golden */}
-      <mesh position={[0, 1.6, 0.07]}>
-        <boxGeometry args={[2.5, 0.65, 0.04]} />
-        <meshToonMaterial color="#daa850" gradientMap={gradientMap} />
-      </mesh>
-      {/* Text */}
+
+      {/* Text — black paint on wood, hand-painted look */}
       <Text
-        position={[0, 1.62, 0.1]}
-        fontSize={0.26}
-        color="#fff8e8"
+        position={[0, 1.57, 0.08]}
+        fontSize={0.24}
+        font="/fonts/PermanentMarker-Regular.ttf"
+        color="#1a1008"
         anchorX="center"
         anchorY="middle"
-        maxWidth={2.1}
+        maxWidth={2.2}
         textAlign="center"
-        outlineWidth={0.02}
-        outlineColor="#4a2810"
+        outlineWidth={0.008}
+        outlineColor="#3a2818"
       >
         {name}
       </Text>
