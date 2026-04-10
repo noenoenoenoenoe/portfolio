@@ -57,10 +57,10 @@ function Bridge({ from, to, bridgeSkills }) {
       >
         <boxGeometry args={[0.08, 0.06, direction.length - 3]} />
         <meshStandardMaterial
-          color="#d4a574"
+          color="#e8c8a0"
           transparent
-          opacity={0.5}
-          roughness={0.9}
+          opacity={0.4}
+          roughness={0.8}
         />
       </mesh>
 

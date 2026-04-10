@@ -1,7 +1,8 @@
-import { useRef, useMemo } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
+import { Outlines } from '@react-three/drei'
 
+// Cuter, rounder seagulls — Pokémon/AC style
 function Seagull({ offset = 0, radius = 18, height = 6, speed = 0.15 }) {
   const groupRef = useRef()
   const wingRef1 = useRef()
@@ -9,46 +10,66 @@ function Seagull({ offset = 0, radius = 18, height = 6, speed = 0.15 }) {
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime() * speed + offset
-    // Circular flight path
     groupRef.current.position.x = Math.sin(t) * radius
     groupRef.current.position.z = Math.cos(t) * radius
     groupRef.current.position.y = height + Math.sin(t * 3) * 0.5
 
-    // Face direction of travel
     groupRef.current.rotation.y = t + Math.PI / 2
 
-    // Wing flap
-    const flap = Math.sin(clock.getElapsedTime() * 6 + offset * 10) * 0.4
-    if (wingRef1.current) wingRef1.current.rotation.z = flap + 0.2
-    if (wingRef2.current) wingRef2.current.rotation.z = -flap - 0.2
+    const flap = Math.sin(clock.getElapsedTime() * 5 + offset * 10) * 0.5
+    if (wingRef1.current) wingRef1.current.rotation.z = flap + 0.15
+    if (wingRef2.current) wingRef2.current.rotation.z = -flap - 0.15
   })
 
   return (
     <group ref={groupRef}>
-      {/* Body */}
+      {/* Rounder body */}
       <mesh>
-        <sphereGeometry args={[0.12, 6, 6]} />
+        <sphereGeometry args={[0.14, 8, 8]} />
+        <meshToonMaterial color="#fafafa" />
+        <Outlines thickness={0.008} color="#b0b0b0" />
+      </mesh>
+      {/* Rounder head */}
+      <mesh position={[0.12, 0.06, 0]}>
+        <sphereGeometry args={[0.08, 8, 8]} />
+        <meshToonMaterial color="#ffffff" />
+      </mesh>
+      {/* Cute eyes */}
+      <mesh position={[0.16, 0.08, 0.04]}>
+        <sphereGeometry args={[0.015, 6, 6]} />
+        <meshToonMaterial color="#222" />
+      </mesh>
+      <mesh position={[0.16, 0.08, -0.04]}>
+        <sphereGeometry args={[0.015, 6, 6]} />
+        <meshToonMaterial color="#222" />
+      </mesh>
+      {/* Orange beak */}
+      <mesh position={[0.2, 0.03, 0]} rotation={[0, 0, -0.2]}>
+        <coneGeometry args={[0.018, 0.07, 4]} />
+        <meshToonMaterial color="#ffa040" />
+      </mesh>
+      {/* Blush cheeks */}
+      <mesh position={[0.14, 0.04, 0.06]}>
+        <sphereGeometry args={[0.012, 4, 4]} />
+        <meshToonMaterial color="#ffbbbb" />
+      </mesh>
+      <mesh position={[0.14, 0.04, -0.06]}>
+        <sphereGeometry args={[0.012, 4, 4]} />
+        <meshToonMaterial color="#ffbbbb" />
+      </mesh>
+      {/* Wings — rounder tips */}
+      <mesh ref={wingRef1} position={[0, 0.03, 0.14]}>
+        <boxGeometry args={[0.16, 0.015, 0.28]} />
+        <meshToonMaterial color="#e8e8f0" />
+      </mesh>
+      <mesh ref={wingRef2} position={[0, 0.03, -0.14]}>
+        <boxGeometry args={[0.16, 0.015, 0.28]} />
+        <meshToonMaterial color="#e8e8f0" />
+      </mesh>
+      {/* Tail */}
+      <mesh position={[-0.14, 0.02, 0]} rotation={[0, 0, 0.3]}>
+        <boxGeometry args={[0.08, 0.01, 0.06]} />
         <meshToonMaterial color="#f0f0f0" />
-      </mesh>
-      {/* Head */}
-      <mesh position={[0.12, 0.05, 0]}>
-        <sphereGeometry args={[0.07, 6, 6]} />
-        <meshToonMaterial color="#f5f5f5" />
-      </mesh>
-      {/* Beak */}
-      <mesh position={[0.2, 0.02, 0]} rotation={[0, 0, -0.2]}>
-        <coneGeometry args={[0.02, 0.08, 4]} />
-        <meshToonMaterial color="#f0a030" />
-      </mesh>
-      {/* Left wing */}
-      <mesh ref={wingRef1} position={[0, 0.02, 0.12]}>
-        <boxGeometry args={[0.15, 0.015, 0.25]} />
-        <meshToonMaterial color="#e8e8e8" />
-      </mesh>
-      {/* Right wing */}
-      <mesh ref={wingRef2} position={[0, 0.02, -0.12]}>
-        <boxGeometry args={[0.15, 0.015, 0.25]} />
-        <meshToonMaterial color="#e8e8e8" />
       </mesh>
     </group>
   )

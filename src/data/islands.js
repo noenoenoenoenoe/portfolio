@@ -13,6 +13,7 @@ export const islands = [
     dockAngle: 1.2,
     color: '#5b9bd5',
     skills: ['javascript', 'teamwork'],
+    scale: 0.8,
   },
   {
     id: 'scrapping-interpol',
@@ -35,6 +36,7 @@ export const islands = [
     dockAngle: -0.5,
     color: '#e8a87c',
     skills: ['python', 'scraping'],
+    scale: 1.0,
   },
   {
     id: 'hackathon-dust',
@@ -47,6 +49,7 @@ export const islands = [
     dockAngle: 2.8,
     color: '#b5a8d0',
     skills: ['python', 'ai'],
+    scale: 0.75,
   },
   {
     id: '1nf-platform',
@@ -77,6 +80,7 @@ export const islands = [
     dockAngle: -1.0,
     color: '#d4c07a',
     skills: ['javascript', 'ai', 'teamwork'],
+    scale: 1.5,
   },
   {
     id: 'levelo-marseille',
@@ -99,6 +103,7 @@ export const islands = [
     dockAngle: 1.5,
     color: '#c5d96c',
     skills: ['python', 'automation'],
+    scale: 0.9,
   },
   {
     id: 'la-dalle',
@@ -123,6 +128,7 @@ export const islands = [
     dockAngle: -1.5,
     color: '#ff6b00',
     skills: ['javascript', 'mobile', 'teamwork'],
+    scale: 1.1,
   },
   {
     id: 'troov-automation',
@@ -147,6 +153,7 @@ export const islands = [
     dockAngle: 0.6,
     color: '#7eb8c9',
     skills: ['javascript', 'automation', 'ai'],
+    scale: 1.0,
   },
 ]
 
