@@ -131,6 +131,35 @@ export const islands = [
     scale: 1.1,
   },
   {
+    id: 'hackathon-mirakl',
+    name: 'Hackathon Mirakl — Nordika Studio',
+    description:
+      "Cockpit d'opérations marchand bâti pour le hackathon Mirakl x Eugenia School (avril 2026). " +
+      "L'idée : prendre la vie d'un marchand multi-marketplaces — flux de commandes, stock, " +
+      "entrepôt, colis, pertes, calendrier business — et la condenser dans un poste de pilotage " +
+      "unifié, augmenté par une IA opérationnelle baptisée LEIA. LEIA est un assistant multilingue " +
+      "(FR/EN/IT/DE/ES) qui ne se contente pas de répondre : il analyse la situation, propose des " +
+      "recommandations chiffrées et déclenche des actions sous gouvernance (modes d'autonomie, " +
+      "approbations, pause founder). Modules livrés : Dashboard avec KPIs et activité récente ; " +
+      "Actions, l'inbox de décisions où LEIA propose et le marchand arbitre ; Calendar Advisor qui " +
+      "relie événements opérationnels (congés, périodes commerciales) à une projection de stock SKU " +
+      "par SKU ; Losses Radar qui agrège audits transporteurs, déclarations fournisseurs et " +
+      "potentiel de récupération ; gestion d'entrepôt avec zones, bins, flux de picking ; et un " +
+      "App Store interne pour brancher des plugins. Stack : Next.js 14 + TypeScript, Prisma + " +
+      "Supabase pour la donnée partagée, OpenAI pour LEIA, n8n pour les workflows déclenchables " +
+      "(le Calendar Advisor tourne via webhook). Côté archi : math déterministe pour LEIA isolée " +
+      "dans tools-math.ts, gouvernance et templates de ledger séparés, EUR partout, données " +
+      "simulées explicitement labellisées. Équipe à 4 avec Ian, Nicolas et Hisseiny.",
+    techStack: ['Next.js 14', 'TypeScript', 'Prisma', 'Supabase', 'PostgreSQL', 'OpenAI', 'n8n', 'Tailwind'],
+    github: 'https://github.com/Ianlaur/Hackathon_mirakl',
+    demo: null,
+    position: [22, 0, -2],
+    dockAngle: -2.0,
+    color: '#6c7eb8',
+    skills: ['javascript', 'ai', 'teamwork'],
+    scale: 1.2,
+  },
+  {
     id: 'troov-automation',
     name: 'Automatisations Troov',
     description:

@@ -70,7 +70,7 @@ export default function Navbar() {
           LinkedIn
         </a>
         <a
-          href="mailto:noe.vincent8@gmail.com"
+          href="mailto:nescoffier@eugeniaschool.com"
           style={navLinkStyle}
         >
           Contact
