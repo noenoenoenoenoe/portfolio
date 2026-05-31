@@ -3,6 +3,7 @@ import Navbar from './ui/Navbar'
 import InfoPanel from './ui/InfoPanel'
 import LoadingScreen from './ui/LoadingScreen'
 import ThemeSwitcher from './ui/ThemeSwitcher'
+import EasterEggs from './ui/EasterEggs'
 import './index.css'
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
       <InfoPanel />
       <LoadingScreen />
       <ThemeSwitcher />
+      <EasterEggs />
     </div>
   )
 }

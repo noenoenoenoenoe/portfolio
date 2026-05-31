@@ -12,3 +12,24 @@ html, body, #root {
   overflow: hidden;
   font-family: 'Inter', system-ui, sans-serif;
 }
+
+/* Responsive mobile : la navbar ne doit pas déborder sur petits écrans */
+@media (max-width: 640px) {
+  nav {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+  nav button {
+    font-size: 16px !important;
+    padding: 6px 14px 6px 8px !important;
+  }
+  nav button img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  nav a {
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+}

@@ -48,9 +48,25 @@ export default function Navbar() {
           borderRadius: '12px',
           boxShadow: '0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15)',
           letterSpacing: '0.5px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
         }}
       >
-        &#x26F5; L'Arche de No&eacute;
+        <img
+          src={`${import.meta.env.BASE_URL}images/avatar-pixel-v3.png`}
+          alt="Avatar de Noé"
+          style={{
+            width: '34px',
+            height: '34px',
+            borderRadius: '50%',
+            border: '2px solid rgba(220,170,80,0.6)',
+            objectFit: 'cover',
+            imageRendering: 'pixelated',
+            flexShrink: 0,
+          }}
+        />
+        <span>&#x26F5; L'Arche de No&eacute;</span>
       </button>
       <div style={{ display: 'flex', gap: '10px' }}>
         <a

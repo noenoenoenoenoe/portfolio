@@ -153,6 +153,16 @@ export const islands = [
     techStack: ['Next.js 14', 'TypeScript', 'Prisma', 'Supabase', 'PostgreSQL', 'OpenAI', 'n8n', 'Tailwind'],
     github: 'https://github.com/Ianlaur/Hackathon_mirakl',
     demo: null,
+    // Photos de l'événement — dépose tes fichiers dans public/images/mirakl/
+    // nommés photo-1.jpg … photo-6.jpg (jpg ou png). Les manquants sont masqués automatiquement.
+    gallery: [
+      'images/mirakl/photo-1.jpg',
+      'images/mirakl/photo-2.jpg',
+      'images/mirakl/photo-3.jpg',
+      'images/mirakl/photo-4.jpg',
+      'images/mirakl/photo-5.jpg',
+      'images/mirakl/photo-6.jpg',
+    ],
     position: [22, 0, -2],
     dockAngle: -2.0,
     color: '#6c7eb8',
@@ -193,6 +203,7 @@ export const ISLAND_RADIUS = 6
 export const captainData = {
   id: 'captain',
   name: 'Le Capitaine',
+  avatar: 'images/avatar-pixel-v3.png',
   description:
     "Bienvenue à bord. Moi c'est Noé, 26 ans, basé à Marseille — et " +
     "assez fier de l'être.\n\n" +

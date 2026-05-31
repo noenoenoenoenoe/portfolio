@@ -22,6 +22,127 @@ const keyframes = `
 }
 `
 
+// Monogram from a project name: "Le Velo Marseille" -> "LV"
+function monogram(name) {
+  const clean = name.split('—')[0].split('-')[0].trim()
+  const words = clean.split(/\s+/).filter((w) => /[a-zA-Z0-9]/.test(w[0]))
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
+  return clean.slice(0, 2).toUpperCase()
+}
+
+// Generated thumbnail / cover for a project (zero-asset). Captain shows their avatar.
+function ProjectCover({ island }) {
+  if (island.id === 'captain') {
+    return (
+      <div style={{
+        height: '150px',
+        background: `radial-gradient(circle at 50% 35%, ${island.color}33, rgba(10,8,5,0.6))`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+      }}>
+        <img
+          src={`${import.meta.env.BASE_URL}${island.avatar}`}
+          alt="Avatar du Capitaine"
+          style={{
+            width: '110px',
+            height: '110px',
+            borderRadius: '50%',
+            border: `3px solid ${island.color}`,
+            boxShadow: `0 6px 24px rgba(0,0,0,0.45)`,
+            objectFit: 'cover',
+            imageRendering: 'pixelated',
+          }}
+        />
+      </div>
+    )
+  }
+  return (
+    <div style={{
+      position: 'relative',
+      height: '128px',
+      overflow: 'hidden',
+      background: `linear-gradient(135deg, ${island.color} 0%, ${island.color}99 45%, rgba(20,16,10,0.9) 100%)`,
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      {/* decorative bubbles */}
+      <div style={{ position: 'absolute', top: '-30px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.10)' }} />
+      <div style={{ position: 'absolute', bottom: '-40px', left: '10px', width: '90px', height: '90px', borderRadius: '50%', background: 'rgba(0,0,0,0.12)' }} />
+      <span style={{
+        fontSize: '64px',
+        fontWeight: 900,
+        color: 'rgba(255,255,255,0.92)',
+        textShadow: '0 3px 14px rgba(0,0,0,0.35)',
+        letterSpacing: '2px',
+        fontFamily: 'Inter, sans-serif',
+      }}>
+        {monogram(island.name)}
+      </span>
+      <span style={{
+        position: 'absolute',
+        bottom: '10px',
+        left: '14px',
+        fontSize: '10px',
+        fontWeight: 700,
+        letterSpacing: '1.5px',
+        textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.85)',
+        background: 'rgba(0,0,0,0.25)',
+        padding: '3px 8px',
+        borderRadius: '6px',
+        backdropFilter: 'blur(4px)',
+      }}>
+        {island.techStack?.[0] || 'Projet'}
+      </span>
+    </div>
+  )
+}
+
+// Event photo gallery — missing files are hidden gracefully.
+function Gallery({ images }) {
+  const [loaded, setLoaded] = useState({})
+  const anyLoaded = Object.values(loaded).some(Boolean)
+  return (
+    <div style={{ marginTop: '24px' }}>
+      <h3 style={{
+        fontSize: '11px', fontWeight: 700, color: '#7a6a50',
+        textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '12px',
+      }}>
+        📸 Photos de l'événement
+      </h3>
+      {!anyLoaded && (
+        <p style={{ color: '#7a6a50', fontSize: '12px', fontStyle: 'italic', margin: '0 0 10px' }}>
+          Photos bientôt en ligne.
+        </p>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        {images.map((src, i) => (
+          <img
+            key={src}
+            src={`${import.meta.env.BASE_URL}${src}`}
+            alt={`Hackathon Mirakl ${i + 1}`}
+            loading="lazy"
+            onLoad={() => setLoaded((l) => ({ ...l, [src]: true }))}
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+            style={{
+              width: '100%',
+              aspectRatio: '4 / 3',
+              objectFit: 'cover',
+              borderRadius: '10px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              display: loaded[src] ? 'block' : 'none',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function AnimatedItem({ delay = 0, children }) {
   return (
     <div style={{
@@ -114,6 +235,8 @@ export default function InfoPanel() {
       }}>
         {selectedIsland && (
           <div key={key}>
+            {/* Generated cover / avatar */}
+            <ProjectCover island={selectedIsland} />
             {/* Header */}
             <div style={{
               padding: '28px 24px 20px',
@@ -246,6 +369,13 @@ export default function InfoPanel() {
                       ))}
                     </div>
                   </div>
+                </AnimatedItem>
+              )}
+
+              {/* Event photo gallery */}
+              {selectedIsland.gallery?.length > 0 && (
+                <AnimatedItem delay={0.35}>
+                  <Gallery images={selectedIsland.gallery} />
                 </AnimatedItem>
               )}
             </div>
